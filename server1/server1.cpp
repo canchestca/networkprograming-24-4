@@ -1,72 +1,58 @@
-﻿//tạo ứng dụng server theo giao thức TCP nhận câu chào từ client
-//sau đó nhập dữu liệu từ bàn phím và gửi cho client
-
+﻿#include <stdio.h>
+#include <WinSock2.h>
+#include <string.h> 
+#include <stdlib.h> 
+#include <string>
 #include <iostream>
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include <winsock2.h>
-#include <WS2tcpip.h>
+using namespace std;
 
-#pragma comment(lib , "ws2_32.lib")
+#pragma comment(lib, "ws2_32")
+#pragma warning(disable:4996)
 
 int main()
-
 {
-    //tạo server
+    // Khoi tao thu vien
     WSADATA wsa;
     WSAStartup(MAKEWORD(2, 2), &wsa);
+
+    // Tao socket
     SOCKET listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    
+
+    // Khai bao dia chi server
     SOCKADDR_IN addr;
-    addr.sin_family = AF_INET6;
+    addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.sin_port = htons(8000);
 
+    // Gan cau truc dia chi voi socket
     bind(listener, (SOCKADDR*)&addr, sizeof(addr));
+
+    // Chuyen sang trang thai cho ket noi
     listen(listener, 5);
 
-    printf("Dang cho du lieu\n");
+    // Cho ket noi moi
+    SOCKET client = accept(listener, NULL, NULL);
 
-    SOCKET client = accept(listener , NULL ,NULL);
-
-
-    //nhận thông điệp từ client
     char buf[256];
-    int r = recv(client, buf, sizeof(buf), 0);
-    if (r<=0)
-    {
-        //ket noi da bi ngat
-        closesocket(client);
-        closesocket(listener);
-        WSACleanup();
-        return 0;
 
-    }
-    //neu co du lieu  thi them ky ket thuc xau
-    buf[r] = 0;
-    //in cau chao ra man hinh
-    printf("From client : %s\n", buf);
-    while (true)
+    while (1)
     {
-        //nhập dữ liệu từ bàn phím
-        printf("nhap xau: ");
-        gets_s(buf, sizeof(buf));
-        
-        //Gửi sang client 
-        send(client, buf, strlen(buf), 0);
-        //kí tự xuống dòng
-        send(client, "\n", 1, 0);
-        
-        // thoát khỏi vòng lặp
-        //nếu chuỗi nhập vào là "exit" thì thoát khỏi vòng lặp
-        if (strcmp(buf, "exit") == 0)
+        int ret = recv(client, buf, sizeof(buf), 0);
+
+        if (ret <= 0)
+        {
+            if (ret == -1)
+                ret = WSAGetLastError();
             break;
-           
+        }
 
+        if (ret < sizeof(buf))
+            buf[ret] = 0;
+        cout << buf << endl;
     }
+
+    // Dong ket noi
     closesocket(client);
     closesocket(listener);
-
-
     WSACleanup();
 }
-
